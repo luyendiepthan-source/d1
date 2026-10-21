@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minh Huệ - Chánh Kiến - Audio Player</title>
+    
+    <!-- === TĂNG TỐC ĐỘ: Kết nối sớm với máy chủ Google Drive giúp Iframe load nhạc nhanh hơn === -->
+    <link rel="preconnect" href="https://google.com">
+    <link rel="preconnect" href="https://google.com">
+    
+    <link rel="stylesheet" href="style.css">
+
+    <!-- ============================================================== -->
+    <!-- BỘ CHẶN "ASK NETLIFY BAR" PHIÊN BẢN V3 - KHÓA VÀ XÓA LIÊN TỤC -->
+    <!-- ============================================================== -->
+    <style>
+      /* Khóa cứng và đẩy tất cả iframe/div lạ do Netlify tự sinh ra ra khỏi màn hình */
+      body > iframe:not(#audio-player),
+      body > div:not(.player-container):not(.search-box):not(.counter-dashboard),
+      [class*="netlify" i], [id*="netlify" i],
+      [class*="feedback" i], [id*="feedback" i],
+      [class*="drawer" i], [id*="drawer" i] {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        height: 0 !important;
+        width: 0 !important;
+        position: absolute !important;
+        top: -9999px !important;
+        z-index: -9999 !important;
+      }
+    </style>
+
+    <script>
+      (function() {
+        const destroyNetlify = () => {
+          // 1. Chỉ giữ lại iframe phát nhạc của bạn, xóa sạch các iframe quảng cáo khác
+          const iframes = document.querySelectorAll('iframe:not(#audio-player)');
+          iframes.forEach(el => el.remove());
+
+          // 2. Tìm và triệt hạ tận gốc các thẻ div/phần tử chứa từ khóa của hệ thống Netlify
+          const elements = document.querySelectorAll('*');
+          elements.forEach(el => {
+            if (el && el.tagName !== 'BODY' && el.tagName !== 'HTML' && el.id !== 'audio-player') {
+              const textId = String(el.id).toLowerCase();
+              const textClass = String(el.className).toLowerCase();
+              if (textId.includes('netlify') || textClass.includes('netlify') || 
+                  textId.includes('drawer') || textClass.includes('drawer') ||
+                  textId.includes('feedback') || textClass.includes('feedback')) {
+                el.remove();
+              }
+            }
+          });
+        };
+
+        // Quét liên tục sau mỗi 50ms để phá vỡ cơ chế tự khôi phục của Netlify
+        setInterval(destroyNetlify, 50);
+        document.addEventListener("DOMContentLoaded", destroyNetlify);
+      })();
+    </script>
+    <!-- ============================================================== -->
+</head>
+<body>
+
+    <!-- Khung chứa trình phát nhạc chính -->
+    <div class="player-container">
+        <h2 id="status-msg">Đang nạp danh sách nhạc từ hệ thống...</h2>
+        
+        <div class="player-wrapper">
+            <h3 id="song-title">Chưa chọn bài hát</h3>
+            
+            <!-- Google Drive Player Preview Iframe -->
+            <iframe id="audio-player" width="100%" height="120" frameborder="0" allow="autoplay" onload="handleIframeAutoNext()"></iframe>
+        </div>
+
+<div class="controls">
+    <button class="control-btn-large">⏮</button>
+    <button class="control-btn-large">⏭</button>
+</div>
+
+
+        <!-- Danh sách bài hát phân loại theo thư mục -->
+        <div id="playlist-wrapper"></div>
+    </div>
+
+    <!-- THANH TÌM KIẾM GĂM ĐỈNH TÍCH HỢP NÚT HOME CHUYỂN ĐỘNG TRÌ HOÃN -->
+    <div class="search-box outer-search">
+        <input type="text" id="search-input" placeholder="Nhập tên bài hát cần tìm...">
+        <button onclick="filterSongsDirect()" class="search-action-btn" title="Kích hoạt tìm kiếm bài hát">🔍 Tìm kiếm</button>
+
+		<!-- Cấu hình nút Home trong file HTML của bạn -->
+<button class="home-action-btn" onclick="handleHomeClickWithDelay()">🏠 Home</button>
+
+    </div>
+
+    <!-- BẢNG THỐNG KÊ TÍCH HỢP SÁT NHẬP NÚT XUẤT DANH SÁCH -->
+     <!--   <div id="counter-dashboard" class="counter-dashboard" title="Click vùng chữ để Ẩn/Hiện số lượng; Click nút để Xuất tệp">
+        <div class="dashboard-text" onclick="toggleSongCountDisplay()" style="cursor: pointer; user-select: none; display: flex; gap: 40px; flex: 1; justify-content: center; align-items: center;">
+            <span>📂 Danh mục: <span id="total-folders">0</span></span>
+            <span>🎵 Tổng số: <span id="total-songs">0</span></span>
+        </div>
+        <button onclick="exportPlaylistToTxt()" class="export-btn">📥 Xuất danh sách</button>
+    </div>
+
+    <!-- File thực thi logic cốt lõi -->
+	<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // Tìm thanh tìm kiếm trên giao diện
+    const searchBox = document.querySelector(".search-box.outer-search");
+    
+    if (searchBox) {
+        // Cập nhật danh sách lên 3 màu ngẫu nhiên
+        const colors = ["bg-random-orange", "bg-random-blue", "bg-random-red"];
+        
+        // Tỷ lệ xúc xắc chia đều cho cả 3 màu (khoảng 33.3% mỗi màu)
+        const randomIndex = Math.floor(Math.random() * colors.length);
+        
+        // Bơm class màu ngẫu nhiên vào giao diện
+        searchBox.classList.add(colors[randomIndex]);
+    }
+});
+
+	</script>
+    <script src="playlist.js"></script>
+</body>
+</html>
