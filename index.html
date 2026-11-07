@@ -6,11 +6,10 @@
     <title>Minh Huệ - Chánh Kiến - Audio Player</title>
     
     <!-- === TĂNG TỐC ĐỘ: Kết nối sớm với máy chủ giúp load nhạc nhanh hơn === -->
-    <link rel="preconnect" href="https://www.googleapis.com">
-    <link rel="preconnect" href="https://drive.usercontent.google.com">
+    <link rel="preconnect" href="https://google.com">
     
     <!-- ✔️ ĐỒNG BỘ ĐƯỜNG DẪN: Đã đổi tên file gọi giao diện thành s2.css -->
-    <link rel="stylesheet" href="d1.css">
+    <link rel="stylesheet" href="d3.css">
 
     <!-- ============================================================== -->
     <!-- BỘ CHẶN "ASK NETLIFY BAR" PHIÊN BẢN V3 - KHÓA VÀ XÓA LIÊN TỤC -->
@@ -56,8 +55,8 @@
           });
         };
 
-        // Quét mỗi 1 giây (quét 50ms làm máy nặng, bấm nút bị khựng)
-        setInterval(destroyNetlify, 1000);
+        // Quét liên tục sau mỗi 50ms để phá vỡ cơ chế tự khôi phục của Netlify
+        setInterval(destroyNetlify, 50);
         document.addEventListener("DOMContentLoaded", destroyNetlify);
       })();
     </script>
@@ -71,35 +70,30 @@
         
         <div class="player-wrapper">
             <h3 id="song-title">Chưa chọn bài hát</h3>
-
-            <!-- Khung chứa Video nền Equalizer nhảy múa -->
-            <div class="equalizer-container">
-                <!-- Nguồn video được nạp từ thư mục Drive VideoNen bằng JS, không dùng thuộc tính loop -->
-                <video id="equalizer-video" muted playsinline preload="metadata"></video>
-            </div>
-
-            <!-- Trình phát nhạc cục bộ ẩn diện mạo gốc (Được điều khiển bằng bảng gộp mới) -->
-            <audio id="audio-player" controls style="width: 100%; margin-top: 20px; display: none;"></audio>
+            
+            <!-- Google Drive Player Preview Iframe -->
+            <iframe id="audio-player" width="100%" height="120" frameborder="0" allow="autoplay" onload="handleIframeAutoNext()"></iframe>
         </div>
 
-        <!-- Danh sách bài hát phân loại theo thư mục quét được từ JSON -->
+<div class="controls">
+    <button class="control-btn-large">⏮</button>
+    <button class="control-btn-large">⏭</button>
+</div>
+
+
+        <!-- Danh sách bài hát phân loại theo thư mục -->
         <div id="playlist-wrapper"></div>
     </div>
 
     <!-- THANH TÌM KIẾM GĂM ĐỈNH TÍCH HỢP NÚT HOME CHUYỂN ĐỘNG TRÌ HOÃN -->
-<!-- =========================================================================
-    1. THANH TÌM KIẾM ĐỈNH ĐẦU: GIỮ NGUYÊN NÚT HOME XỊN ĐÃ ĐỔI VỊ TRÍ RA SAU 
-    ========================================================================= -->
-<div class="search-box outer-search">
-    <input type="text" id="search-input" placeholder="Tìm kiếm bài ...">
-    <button class="search-action-btn" onclick="filterSongsDirect()">🔍</button>
-    
-    <!-- NÚT HOME TRÊN CÙNG VẪN GIỮ NGUYÊN HOÀN HẢO Ở ĐÂY -->
-    <button class="home-action-btn" onclick="handleHomeClickWithDelay()">🏠</button>
-</div>
+    <div class="search-box outer-search">
+        <input type="text" id="search-input" placeholder="Tìm kiếm bài...">
+        <button onclick="filterSongsDirect()" class="search-action-btn" title="Tìm kiếm bài...">🔍</button>
 
-<!-- (Các phần nội dung phát nhạc, video nền equalizer, danh sách playlist giữ nguyên) -->
+		<!-- Cấu hình nút Home trong file HTML của bạn -->
+<button class="home-action-btn" onclick="handleHomeClickWithDelay()">🏠</button>
 
+    </div>
 
 <!-- =========================================================================
     2. BẢNG THỐNG KÊ ĐÁY WEB: SẠCH SẼ, KHÔNG CÒN NÚT HOME BỊ LỖI
@@ -112,20 +106,26 @@
     <!-- Nút Home lỗi ở đây đã được xóa bỏ vĩnh viễn giúp chữ tự căn giữa đẹp đẽ -->
 </div>
 
-
     <!-- File thực thi logic cốt lõi -->
-    <?php
-    $counter_file = "tc.txt"; 
+<?php
+$counter_file = "tc.txt"; // Đã đổi tên file lưu trữ tại đây
 
-    if (!file_exists($counter_file)) {
-        file_put_contents($counter_file, "0");
-    }
+// Nếu file chưa tồn tại, tạo mới và ghi số 0
+if (!file_exists($counter_file)) {
+    file_put_contents($counter_file, "0");
+}
 
-    $hits = (int)file_get_contents($counter_file);
-    $hits++;
-    file_put_contents($counter_file, $hits);
-    ?>
+// Đọc số lượt truy cập hiện tại
+$hits = (int)file_get_contents($counter_file);
 
+// Tăng số lượt truy cập lên 1 và lưu lại
+$hits++;
+file_put_contents($counter_file, $hits);
+
+// Đoạn mã này chạy ẩn, không hiển thị gì ra ngoài giao diện web
+?>
+
+	
     <script>
     document.addEventListener("DOMContentLoaded", function () {
         // Tìm cả thanh tìm kiếm và thanh bảng thống kê trên giao diện
@@ -153,7 +153,6 @@
     });
     </script>
     
-    <script src="d1.js"></script>
+    <script src="d3.js"></script>
 </body>
 </html>
-
