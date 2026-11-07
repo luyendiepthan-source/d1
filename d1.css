@@ -1,0 +1,524 @@
+/* =========================================================================
+   GIAO DIỆN PHÁT NHẠC HIỆN ĐẠI - GỌN GÀNG, SẠCH SẼ & NỔI KHỐI ĐỘC LẬP
+   ========================================================================= */
+
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    margin: 0;
+    padding: 100px 20px 60px 20px; /* Chừa chỗ trống 100px đỉnh đầu cho thanh tìm kiếm găm cứng */
+    display: flex;
+    flex-direction: column;       /* Xếp các khối độc lập từ trên xuống dưới */
+    align-items: center;
+    justify-content: flex-start;  
+    min-height: 100vh;
+    box-sizing: border-box;
+    
+    /* === CẤU HÌNH CHẾ ĐỘ LẶP HÌNH NỀN ĐỒNG BỘ === */
+    background-position: top left;
+    background-repeat: repeat !important;
+    background-size: auto !important;
+    background-attachment: fixed !important; /* Giúp nền đứng yên khi cuộn bài hát, tạo chiều sâu */
+    
+    transition: background-image 0.5s ease-in-out; 
+}
+
+/* Khung chứa trình phát nhạc chính dạng kính mờ tinh tế - ĐÃ SỬA CHỐNG NHÁY MỜ */
+.player-container {
+    max-width: 480px;
+    width: 100%;
+    /* ✔️ THAY THẾ BẰNG NỀN TRẮNG ĐỤC TRONG SUỐT CỐ ĐỊNH CHỐNG CHỚP MỜ XUNG ĐỘT VIDEO */
+    background: rgba(255, 255, 255, 0.55) !important; 
+    padding: 25px;
+    border-radius: 20px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06) !important;
+    border: 1px solid rgba(13, 71, 161, 0.15) !important;
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Tự động co giãn khoảng cách các khối bên trong ngay ngắn */
+}
+
+/* =========================================================================
+   CSS KHUNG PHÁT NHẠC GỘP CHUNG HIỆN ĐẠI (SPOTIFY STYLE)
+   ========================================================================= */
+.custom-player-wrapper {
+    max-width: 100%;
+    margin: 15px auto 5px auto;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.55) !important;
+    border-radius: 14px;
+    border: 1px solid rgba(13, 71, 161, 0.2) !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+    box-sizing: border-box;
+}
+
+/* Hàng chứa các nút chính */
+.player-btn-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+/* Kiểu dáng nút bấm chính */
+.control-main-btn {
+    padding: 10px 15px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 8px;
+    border: 1px solid rgba(13, 71, 161, 0.25);
+    background: #ffffff;
+    color: #1a365d;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+.control-main-btn:hover {
+    background: #f0f4f8;
+    transform: scale(1.03);
+}
+
+/* Riêng nút Play/Pause nổi bật với tông màu của bạn */
+.control-main-btn.btn-play-pause {
+    background: #F39C12 !important;
+    color: #ffffff !important;
+    border-color: #F39C12 !important;
+    padding: 10px 22px;
+}
+.control-main-btn.btn-play-pause:hover {
+    background: #71B7FF !important;
+}
+
+/* Kiểu dáng nút chuyển chế độ Lặp bài */
+.control-sub-btn {
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 8px;
+    border: 1px solid rgba(0,0,0,0.12);
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+.control-sub-btn.mode-all {
+    background: #e2e8f0;
+    color: #334155;
+}
+.control-sub-btn.mode-one {
+    background: #71B7FF !important;
+    color: #ffffff !important;
+    border-color: #71B7FF !important;
+}
+
+/* Hàng chứa thanh tiến trình kéo nhạc */
+.player-progress-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.player-progress-row span {
+    font-size: 12px;
+    font-weight: 600;
+    color: #4a5568;
+    min-width: 32px;
+}
+#track-time-current {
+    text-align: right;
+}
+
+/* Thanh trượt kéo tiến trình bài hát - Tự động giãn tối đa */
+#track-progress-bar {
+    flex-grow: 1;
+    accent-color: #F39C12;
+    cursor: pointer;
+    height: 5px;
+    border-radius: 4px;
+    background: #cbd5e1;
+}
+
+/* ❌ ĐÃ ẨN VĨNH VIỄN CỤM CHỈNH ÂM LƯỢNG KHỎI GIAO DIỆN */
+.player-volume-box {
+    display: none !important;
+}
+
+/* Khóa ẩn vĩnh viễn audio hệ thống nếu CSS cũ cố tình đè hiển thị */
+audio {
+    display: none !important;
+}
+
+/* Tiêu đề trạng thái danh mục nhạc */
+#status-msg {
+    text-align: center; 
+    font-size: 16px; 
+    color: #333; 
+    margin: 0 0 5px 0;
+    font-weight: 600;
+}
+
+/* Tiêu đề bài hát hiển thị nổi bật */
+#song-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e3a8a;
+    text-align: center;
+    margin: 5px 0;
+    word-break: break-word;
+}
+
+/* Thư mục danh sách nhạc bài hát */
+.folder-section-title {
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    background-color: rgba(255, 255, 255, 0.6);
+    margin-top: 8px;
+    border-radius: 10px;
+    font-weight: bold;
+    color: #333;
+    border: 1px solid rgba(0, 0, 0, 0.09);		/* Tạo bo viền đậm nhạt */
+    transition: background 0.2s;
+}
+.folder-section-title:hover {
+    background-color: rgba(255, 255, 255, 0.85);
+}
+.folder-section-title::after {
+    content: '▼';
+    font-size: 11px;
+    color: #666;
+    transition: transform 0.3s ease;
+}
+.folder-section-title.collapsed::after {
+    transform: rotate(-90deg);
+}
+
+/* Danh sách bài hát (ul playlist) */
+.playlist {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    max-height: 20000px; 
+    opacity: 1;
+    transition: max-height 0.4s ease-in-out, opacity 0.3s;
+}
+.folder-section-title.collapsed + .playlist {
+    max-height: 0 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* =========================================================================
+   ĐOẠN CODE ĐIỀU CHỈNH VẠCH NGĂN CÁCH ĐẬM NHẠT CHO CÁC BÀI HÁT LẺ
+   ========================================================================= */
+
+.playlist li {
+    border-bottom: 1px solid rgba(13, 71, 161, 0.4) !important; 
+    padding: 11px 15px; 
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #333;
+    transition: all 0.2s ease;
+}
+
+/* Khi di chuột (Hover) vào bài hát lẻ, vạch ngăn sẽ tự đậm lên một chút */
+.playlist li:hover {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    border-bottom-color: rgba(13, 71, 161, 0.9) !important; 
+}
+
+/* Bài hát cuối cùng của danh sách thì ẩn vạch đi để không bị lỗi giao diện */
+.playlist li:last-child {
+    border-bottom: 1px solid transparent !important;
+}
+
+/* Trạng thái dòng bài hát đang được chọn phát (Active) - ĐỔI MÀU MƯỢT MÀ */
+.playlist li.active {
+    background: linear-gradient(90deg, rgba(33, 150, 243, 0.25), rgba(21, 101, 192, 0.15)) !important;
+    color: #1565c0 !important;
+    font-weight: 700;
+    border-radius: 8px;
+    border: 1px solid rgba(33, 150, 243, 0.5) !important;
+    border-bottom: 1px solid rgba(33, 150, 243, 0.5) !important; 
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+    transition: all 0.3s ease-in-out !important; 
+}
+
+/* Sóng nhạc mini nhảy múa khi đang phát bài hát */
+.wave-container {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 14px;
+    margin-left: auto;
+    margin-right: 15px;
+}
+.wave-bar {
+    width: 3px;
+    height: 100%;
+    background-color: #2196f3;
+    border-radius: 2px;
+    animation: bounce 0.8s ease-in-out infinite alternate;
+}
+.wave-bar:nth-child(1) { animation-delay: 0.1s; }
+.wave-bar:nth-child(2) { animation-delay: 0.4s; }
+.wave-bar:nth-child(3) { animation-delay: 0.2s; }
+.wave-bar:nth-child(4) { animation-delay: 0.6s; }
+
+@keyframes bounce {
+    0% { height: 20%; }
+    100% { height: 100%; }
+}
+
+/* =========================================================================
+   MỤC TÌM KIẾM CỐ ĐỊNH ĐỈNH - ĐÃ SỬA NỀN ĐẶC HOÀN TOÀN CHỐNG NHÁY MỜ UX
+   ========================================================================= */
+.search-box.outer-search {
+    position: fixed;
+    top: 15px;                
+    left: 50%;
+    transform: translateX(-50%); 
+    width: calc(100% - 30px); 
+    max-width: 480px;         
+    box-sizing: border-box;
+    z-index: 99999;           
+    padding: 10px;            
+    border-radius: 16px;
+    display: flex;
+    gap: 6px;                 
+    border: 1px solid rgba(255, 255, 255, 0.65); 
+    transition: all 0.4s ease-in-out;
+}
+
+/* =========================================================================
+   BỘ SƯU TẬP 4 TÔNG MÀU NỀN ĐẶC MỊN ĐỒNG BỘ CHUẨN (CHỐNG NHÁY MỜ UX)
+   ========================================================================= */
+
+/* TÔNG 1: Cam đào nhạt ➔ Cam hoàng hôn */
+.search-box.outer-search.bg-random-orange,
+.counter-dashboard.bg-random-orange {
+    background: linear-gradient(45deg, rgb(255, 235, 204), rgb(255, 184, 77)) !important;
+    box-shadow: 0 6px 20px rgba(94, 33, 0, 0.12) !important; 
+}
+
+/* TÔNG 2: Xanh da trời ➔ Xanh đại dương */
+.search-box.outer-search.bg-random-blue,
+.counter-dashboard.bg-random-blue {
+    background: linear-gradient(45deg, rgb(204, 229, 255), rgb(102, 178, 255)) !important;
+    box-shadow: 0 6px 20px rgba(10, 25, 47, 0.12) !important; 
+}
+
+/* TÔNG 3: Đỏ san hô nhạt ➔ Đỏ ruby */
+.search-box.outer-search.bg-random-red,
+.counter-dashboard.bg-random-red {
+    background: linear-gradient(45deg, rgb(255, 230, 230), rgb(255, 153, 153)) !important;
+    box-shadow: 0 6px 20px rgba(127, 29, 29, 0.12) !important; 
+}
+
+/* TÔNG 4: Tím thạch anh ➔ Tím oải hương */
+.search-box.outer-search.bg-random-purple,
+.counter-dashboard.bg-random-purple {
+    background: linear-gradient(45deg, rgb(242, 230, 255), rgb(204, 153, 255)) !important;
+    box-shadow: 0 6px 20px rgba(77, 0, 153, 0.1) !important; 
+}
+
+/* Ô nhập chữ tìm kiếm bên trong */
+.outer-search input {
+flex: 1;
+min-width: 0;
+padding: 10px 12px;
+border: 1px solid rgba(255, 255, 255, 0.3);
+border-radius: 5px;
+
+box-sizing: border-box;
+background: rgba(255, 255, 255, 0.85);
+font-size: 15px !important;
+font-weight: 600;
+outline: none;
+color: #0d47a1;
+transition: all 0.25s ease;
+}
+.outer-search input::placeholder {
+color: #5a6472;
+font-weight: 500;
+}
+.outer-search input:focus {
+border-color: #ffffff;
+background: #ffffff;
+color: #000000;
+box-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
+}
+
+/* NÚT ACTION TÌM KIẾM - ĐÃ FIX KHÔNG BỊ CO BÓP MẤT CHỮ */
+.search-action-btn {
+flex-shrink: 0;           /* THAY ĐỔI CRITICAL: Tuyệt đối không cho phép nút bị bóp méo hay thu nhỏ lấn chữ */
+background: rgba(255, 255, 255, 0.5) !important;
+border: 1px solid rgba(255, 255, 255, 0.6);
+border-radius: 0 !important;
+
+color: #0d47a1 !important;
+padding: 0 12px;          /* Tối ưu lại khoảng cách lề lề chữ nút */
+font-size: 13px;
+font-weight: bold;
+border-radius: 10px;
+cursor: pointer;
+white-space: nowrap;
+transition: all 0.2s ease;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+.search-action-btn:hover {
+background: #ffffff !important;
+box-shadow: 0 4px 12px rgba(255, 255, 255, 0.4);
+}
+
+/* NÚT TRANG CHỦ (HOME) - ĐÃ FIX CHỐNG TRÀN VÀ ĐẨY DÒNG */
+.home-action-btn {
+flex-shrink: 0;           /* THAY ĐỔI CRITICAL: Khóa cứng tỷ lệ, nút Home luôn xếp hàng ngang thẳng hàng */
+background: rgba(255, 255, 255, 0.5) !important;
+border: 1px solid rgba(255, 255, 255, 0.6);
+border-radius: 0 !important;
+
+color: #0d47a1 !important;
+padding: 0 12px;
+font-size: 13px;
+font-weight: bold;
+border-radius: 10px;
+cursor: pointer;
+white-space: nowrap;
+transition: all 0.2s ease;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+.home-action-btn:hover {
+background: #ffffff !important;
+box-shadow: 0 4px 12px rgba(255, 255, 255, 0.4);
+}
+
+.search-action-btn:active, .home-action-btn:active {
+transform: scale(0.95);
+}
+
+/* =========================================================================
+BẢNG THỐNG KÊ ĐỘC LẬP TÍCH HỢP ĐỒNG BỘ MÀU NGẪU NHIÊN (ĐÃ CĂN GIỮA)
+========================================================================= */
+.counter-dashboard {
+    width: 100%;
+    max-width: 480px;
+    box-sizing: border-box;
+    margin-top: 20px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center; /* 👈 Đổi từ space-between thành center để dải chữ căn giữa tuyệt đối */
+    padding: 12px 20px;       /* Cân bằng khoảng cách trên dưới thoáng đãng hơn */
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: bold;
+    color: #36454F;
+    border: 1px solid rgba(33, 150, 243, 0.25);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.export-btn {
+background: rgba(255, 255, 255, 0.4);
+border: 1px solid rgba(33, 150, 243, 0.2);
+color: #1d4ed8;
+padding: 10px 16px;
+font-size: 12px;
+font-weight: bold;
+border-radius: 10px;
+cursor: pointer;
+white-space: nowrap;
+transition: all 0.2s ease;
+}
+.export-btn:hover {
+background: #ffffff;
+color: #34495E;
+border-color: #ffffff;
+box-shadow: 0 2px 8px rgba(33, 150, 243, 0.25);
+}
+.pagination-row button:hover {
+background: #2196f3 !important;
+color: #fff !important;
+border-color: #2196f3 !important;
+}
+/ =========================================================================
+CẤU HÌNH KHUNG CHỨA EQUALIZER VIDEO - CHỐNG TRÀN VÀ BO GÓC SẮC NÉT
+========================================================================= */
+.equalizer-container {
+position: relative;
+width: 100%;
+max-width: 440px;
+height: 240px;
+margin: 15px auto;
+display: flex;
+justify-content: center;
+align-items: center;
+background: #000000;
+border-radius: 16px !important;
+border: 1px solid rgba(33, 150, 243, 0.3) !important;
+overflow: hidden !important;
+box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+#equalizer-video {
+width: 100% !important;
+height: 100% !important;
+max-width: 100% !important;
+max-height: 100% !important;
+object-fit: cover !important;
+border-radius: 16px !important;
+pointer-events: auto !important;
+cursor: pointer !important;
+}
+/* =========================================================================
+CẤU HÌNH NÚT TÌM KIẾM GIỌNG NÓI (VOICE SEARCH) TÍCH HỢP THANH SEARCH
+========================================================================= */
+.voice-search-btn {
+flex-shrink: 0;
+background: rgba(255, 255, 255, 0.35) !important;
+border: 1px solid rgba(255, 255, 255, 0.4);
+color: #0d47a1 !important;
+padding: 0 12px;
+font-size: 15px;
+border-radius: 10px;
+cursor: pointer;
+white-space: nowrap;
+transition: all 0.2s ease;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+.voice-search-btn:hover {
+background: #ffffff !important;
+box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+}
+.voice-search-btn:active {
+transform: scale(0.96);
+}
+.voice-search-btn.listening {
+background: #e74c3c !important;
+color: #ffffff !important;
+border-color: #e74c3c !important;
+animation: voicePulse 1.2s infinite alternate;
+}
+@keyframes voicePulse {
+0% { box-shadow: 0 0 4px #e74c3c; transform: scale(1); }
+100% { box-shadow: 0 0 16px #e74c3c; transform: scale(1.05); }
+}
+/* Điều khiển ẩn dải phân trang khi thư mục bị đóng (Collapsed) */
+.folder-section-title.collapsed + .playlist + .pagination-row {
+    display: none !important;
+}

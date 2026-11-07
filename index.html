@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minh Huệ - Chánh Kiến - Audio Player</title>
+    
+    <!-- === TĂNG TỐC ĐỘ: Kết nối sớm với máy chủ giúp load nhạc nhanh hơn === -->
+    <link rel="preconnect" href="https://www.googleapis.com">
+    <link rel="preconnect" href="https://drive.usercontent.google.com">
+    
+    <!-- ✔️ ĐỒNG BỘ ĐƯỜNG DẪN: Đã đổi tên file gọi giao diện thành s2.css -->
+    <link rel="stylesheet" href="d1.css">
+
+    <!-- ============================================================== -->
+    <!-- BỘ CHẶN "ASK NETLIFY BAR" PHIÊN BẢN V3 - KHÓA VÀ XÓA LIÊN TỤC -->
+    <!-- ============================================================== -->
+    <style>
+      /* Khóa cứng và đẩy tất cả iframe/div lạ do Netlify tự sinh ra ra khỏi màn hình */
+      body > iframe:not(#audio-player),
+      body > div:not(.player-container):not(.search-box):not(.counter-dashboard),
+      [class*="netlify" i], [id*="netlify" i],
+      [class*="feedback" i], [id*="feedback" i],
+      [class*="drawer" i], [id*="drawer" i] {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        height: 0 !important;
+        width: 0 !important;
+        position: absolute !important;
+        top: -9999px !important;
+        z-index: -9999 !important;
+      }
+    </style>
+
+    <script>
+      (function() {
+        const destroyNetlify = () => {
+          // 1. Chỉ giữ lại iframe phát nhạc của bạn, xóa sạch các iframe quảng cáo khác
+          const iframes = document.querySelectorAll('iframe:not(#audio-player)');
+          iframes.forEach(el => el.remove());
+
+          // 2. Tìm và triệt hạ tận gốc các thẻ div/phần tử chứa từ khóa của hệ thống Netlify
+          const elements = document.querySelectorAll('*');
+          elements.forEach(el => {
+            if (el && el.tagName !== 'BODY' && el.tagName !== 'HTML' && el.id !== 'audio-player') {
+              const textId = String(el.id).toLowerCase();
+              const textClass = String(el.className).toLowerCase();
+              if (textId.includes('netlify') || textClass.includes('netlify') || 
+                  textId.includes('drawer') || textClass.includes('drawer') ||
+                  textId.includes('feedback') || textClass.includes('feedback')) {
+                el.remove();
+              }
+            }
+          });
+        };
+
+        // Quét mỗi 1 giây (quét 50ms làm máy nặng, bấm nút bị khựng)
+        setInterval(destroyNetlify, 1000);
+        document.addEventListener("DOMContentLoaded", destroyNetlify);
+      })();
+    </script>
+    <!-- ============================================================== -->
+</head>
+<body>
+
+    <!-- Khung chứa trình phát nhạc chính -->
+    <div class="player-container">
+        <h2 id="status-msg">Đang nạp danh sách nhạc từ hệ thống...</h2>
+        
+        <div class="player-wrapper">
+            <h3 id="song-title">Chưa chọn bài hát</h3>
+
+            <!-- Khung chứa Video nền Equalizer nhảy múa -->
+            <div class="equalizer-container">
+                <!-- Nguồn video được nạp từ thư mục Drive VideoNen bằng JS, không dùng thuộc tính loop -->
+                <video id="equalizer-video" muted playsinline preload="metadata"></video>
+            </div>
+
+            <!-- Trình phát nhạc cục bộ ẩn diện mạo gốc (Được điều khiển bằng bảng gộp mới) -->
+            <audio id="audio-player" controls style="width: 100%; margin-top: 20px; display: none;"></audio>
+        </div>
+
+        <!-- Danh sách bài hát phân loại theo thư mục quét được từ JSON -->
+        <div id="playlist-wrapper"></div>
+    </div>
+
+    <!-- THANH TÌM KIẾM GĂM ĐỈNH TÍCH HỢP NÚT HOME CHUYỂN ĐỘNG TRÌ HOÃN -->
+<!-- =========================================================================
+    1. THANH TÌM KIẾM ĐỈNH ĐẦU: GIỮ NGUYÊN NÚT HOME XỊN ĐÃ ĐỔI VỊ TRÍ RA SAU 
+    ========================================================================= -->
+<div class="search-box outer-search">
+    <input type="text" id="search-input" placeholder="Tìm kiếm bài ...">
+    <button class="search-action-btn" onclick="filterSongsDirect()">🔍</button>
+    
+    <!-- NÚT HOME TRÊN CÙNG VẪN GIỮ NGUYÊN HOÀN HẢO Ở ĐÂY -->
+    <button class="home-action-btn" onclick="handleHomeClickWithDelay()">🏠</button>
+</div>
+
+<!-- (Các phần nội dung phát nhạc, video nền equalizer, danh sách playlist giữ nguyên) -->
+
+
+<!-- =========================================================================
+    2. BẢNG THỐNG KÊ ĐÁY WEB: SẠCH SẼ, KHÔNG CÒN NÚT HOME BỊ LỖI
+    ========================================================================= -->
+<div id="counter-dashboard" class="counter-dashboard" title="Click vùng chữ để Ẩn/Hiện số lượng">
+    <div class="dashboard-text" onclick="toggleSongCountDisplay()" style="cursor: pointer; user-select: none; display: flex; gap: 40px; flex: 1; justify-content: center; align-items: center;">
+        <span>📂 Danh mục: <span id="total-folders">0</span></span>
+        <span>🎵 Tổng số: <span id="total-songs">0</span></span>
+    </div>
+    <!-- Nút Home lỗi ở đây đã được xóa bỏ vĩnh viễn giúp chữ tự căn giữa đẹp đẽ -->
+</div>
+
+
+    <!-- File thực thi logic cốt lõi -->
+    <?php
+    $counter_file = "tc.txt"; 
+
+    if (!file_exists($counter_file)) {
+        file_put_contents($counter_file, "0");
+    }
+
+    $hits = (int)file_get_contents($counter_file);
+    $hits++;
+    file_put_contents($counter_file, $hits);
+    ?>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Tìm cả thanh tìm kiếm và thanh bảng thống kê trên giao diện
+        const searchBox = document.querySelector(".search-box.outer-search");
+        const counterDashboard = document.getElementById("counter-dashboard");
+        
+        if (searchBox) {
+            // ✔️ CHỈ GIỮ LẠI ĐÚNG 4 MÀU THEO YÊU CẦU CỦA BẠN (CÁC MÀU KHÁC ĐÃ BỎ HẾT)
+            const colors = [
+                "bg-random-orange", 
+                "bg-random-blue", 
+                "bg-random-purple"
+            ];
+            
+            // Xúc xắc chọn một màu ngẫu nhiên chung cho cả 2 thanh
+            const randomIndex = Math.floor(Math.random() * colors.length);
+            const selectedColorClass = colors[randomIndex];
+            
+            // Bơm màu ngẫu nhiên trùng nhau vào thanh Tìm kiếm và thanh Thống kê
+            searchBox.classList.add(selectedColorClass);
+            if (counterDashboard) {
+                counterDashboard.classList.add(selectedColorClass);
+            }
+        }
+    });
+    </script>
+    
+    <script src="d1.js"></script>
+</body>
+</html>
+
